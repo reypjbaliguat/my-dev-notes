@@ -1,0 +1,22 @@
+---
+title: MongoDB TTL Index
+description: Why expiresAt alone does not delete documents
+---
+
+## Problem
+
+Adding `expiresAt` does **not** automatically delete documents.
+
+## Solution
+
+Create a TTL index:
+
+```js
+db.sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+```
+
+<Warning>
+  {" "}
+  TTL cleanup runs every ~60 seconds. Always validate expiration in your application
+  code.{" "}
+</Warning>
