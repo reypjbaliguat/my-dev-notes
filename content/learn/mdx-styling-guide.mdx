@@ -1,0 +1,315 @@
+---
+title: MDX Styling Guide
+description: Complete guide to all available text styling options in your MDX notes
+---
+
+<SectionCard title="🎯 Headers & Structure">
+
+### Large Header (H2)
+
+```markdown
+## This creates a cyan header with underline
+```
+
+**Result:** Large cyan text (text-cyan-400) with bottom border
+
+### Medium Header (H3)
+
+```markdown
+### This creates an emerald green header
+```
+
+**Result:** Medium emerald text (text-emerald-400)
+
+</SectionCard>
+
+<SectionCard title="✨ Text Formatting">
+
+### Bold Text
+
+```markdown
+**This text will be bold and yellow**
+```
+
+**This text will be bold and yellow** ← Yellow highlighting (text-yellow-300)
+
+### Italic Text
+
+```markdown
+_This text will be italic and purple_
+```
+
+_This text will be italic and purple_ ← Purple emphasis (text-purple-300)
+
+### Inline Code
+
+```markdown
+`const variable = "pink code"`
+```
+
+`const variable = "pink code"` ← Pink code with dark background
+
+</SectionCard>
+
+<SectionCard title="🔗 Links & Navigation">
+
+### Link Styling
+
+```markdown
+[This is a link](https://example.com)
+```
+
+[This is a link](https://example.com) ← Blue links with hover effects
+
+</SectionCard>
+
+<SectionCard title="📝 Lists & Organization">
+
+### Bullet Lists
+
+```markdown
+- First item in gray
+- Second item in gray
+- Third item in gray
+```
+
+- First item in gray
+- Second item in gray
+- Third item in gray
+
+### Numbered Lists
+
+```markdown
+1. First numbered item
+2. Second numbered item
+3. Third numbered item
+```
+
+1. First numbered item
+2. Second numbered item
+3. Third numbered item
+
+</SectionCard>
+
+<SectionCard title="💬 Quotes & Highlights">
+
+### Blockquotes
+
+```markdown
+> This is a highlighted quote with orange accent
+> Multiple lines are supported
+```
+
+> This is a highlighted quote with orange accent
+> Multiple lines are supported
+
+</SectionCard>
+
+<SectionCard title="💻 Code Examples">
+
+### JavaScript Example
+
+````markdown
+```js
+function example() {
+  console.log("Code blocks have syntax highlighting");
+}
+```
+````
+
+```js
+function example() {
+  console.log("Code blocks have syntax highlighting");
+}
+```
+
+### TypeScript Example
+
+````markdown
+```ts
+interface User {
+  name: string;
+  age: number;
+}
+```
+````
+
+```ts
+interface User {
+  name: string;
+  age: number;
+}
+```
+
+</SectionCard>
+
+<SectionCard title="🚨 Special Components">
+
+### Warning Component
+
+```markdown
+<Warning>
+  This creates a special warning box with custom styling
+</Warning>
+```
+
+<Warning>This creates a special warning box with custom styling</Warning>
+
+### Section Cards
+
+```markdown
+<SectionCard title="Your Title">
+Content goes here...
+</SectionCard>
+```
+
+</SectionCard>
+
+<SectionCard title="🎨 Color Reference">
+
+<table className="w-full">
+  <thead>
+    <tr>
+      <th>Element</th>
+      <th>Syntax</th>
+      <th>Color</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>H2 Headers</td>
+      <td>
+        <code>## Text</code>
+      </td>
+      <td>
+        <code>text-cyan-400</code>
+      </td>
+      <td>Large cyan headers with underline</td>
+    </tr>
+    <tr>
+      <td>H3 Headers</td>
+      <td>
+        <code>### Text</code>
+      </td>
+      <td>
+        <code>text-emerald-400</code>
+      </td>
+      <td>Medium emerald headers</td>
+    </tr>
+    <tr>
+      <td>Regular Text</td>
+      <td>
+        <code>Normal text</code>
+      </td>
+      <td>
+        <code>text-gray-200</code>
+      </td>
+      <td>Light gray for readability</td>
+    </tr>
+    <tr>
+      <td>Bold Text</td>
+      <td>
+        <code>**bold**</code>
+      </td>
+      <td>
+        <code>text-yellow-300</code>
+      </td>
+      <td>Yellow highlighting</td>
+    </tr>
+    <tr>
+      <td>Italic Text</td>
+      <td>
+        <code>*italic*</code>
+      </td>
+      <td>
+        <code>text-purple-300</code>
+      </td>
+      <td>Purple emphasis</td>
+    </tr>
+    <tr>
+      <td>Inline Code</td>
+      <td>
+        <code>`code`</code>
+      </td>
+      <td>
+        <code>text-pink-300</code>
+      </td>
+      <td>Pink code with background</td>
+    </tr>
+    <tr>
+      <td>Links</td>
+      <td>
+        <code>[text](url)</code>
+      </td>
+      <td>
+        <code>text-blue-400</code>
+      </td>
+      <td>Blue with hover effects</td>
+    </tr>
+    <tr>
+      <td>Blockquotes</td>
+      <td>
+        <code>&gt; quote</code>
+      </td>
+      <td>
+        <code>text-orange-200</code>
+      </td>
+      <td>Orange accent with background</td>
+    </tr>
+  </tbody>
+</table>
+
+</SectionCard>
+
+<SectionCard title="📚 Best Practices">
+
+### Structure Your Content
+
+```markdown
+## Main Topic
+
+Brief introduction to the topic.
+
+### Subtopic
+
+More detailed information.
+
+**Key points** in _italics_ with `code examples`.
+
+> Important quotes or highlights
+```
+
+### Use Components
+
+```markdown
+<Warning>
+  Important warnings or notes
+</Warning>
+
+<SectionCard title="Organized Section">
+  Group related content together
+</SectionCard>
+```
+
+### Code Examples
+
+Always include language for syntax highlighting:
+
+````markdown
+```js
+// JavaScript code
+```
+
+```ts
+// TypeScript code
+```
+
+```bash
+# Terminal commands
+```
+````
+
+</SectionCard>
+
+This styling creates a **modern, professional** appearance optimized for dark backgrounds with excellent readability and visual hierarchy!

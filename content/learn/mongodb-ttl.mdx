@@ -16,7 +16,6 @@ db.sessions.createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 ```
 
 <Warning>
-  {" "}
-  TTL cleanup runs every ~60 seconds. Always validate expiration in your application
-  code.{" "}
+  TTL cleanup runs every ~60 seconds. Always validate expiration in your
+  application code.
 </Warning>
