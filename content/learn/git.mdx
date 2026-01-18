@@ -57,3 +57,40 @@ description: A comprehensive guide to learning Git, including commands, workflow
 - To get short summary of settings - `git config -h`
 
 </SectionCard>
+
+<SectionCard title="Ignoring Files">
+
+- `git rm --cached <file>` - removes file from staging area but keeps it in working directory
+- [https://github.com/github/gitignore](https://github.com/github/gitignore) - collection of .gitignore templates
+
+</SectionCard>
+
+<SectionCard title="Viewing staged and unstaged changes">
+
+- Check what are the changes - `git diff --staged` for staged changes, `git diff` for unstaged changes
+
+</SectionCard>
+
+<SectionCard title="Viewing history">
+
+- View commit history - `git log`
+- View one line per commit - `git log --oneline`
+- Reverse order - `git log --reverse`
+- Show commit changes - `git show <commit-hash>`
+- Show changes using Head - `git show HEAD~(how many commits back)`
+- Show changes for a specific file - `git log -p <file-path>`
+- `git ls-tree` - list files in a specific commit
+
+</SectionCard>
+
+<SectionCard title="Unstaging files">
+
+- `git restore --staged <file>` - unstages a file
+
+</SectionCard>
+
+<SectionCard title="Restoring files">
+
+- `git restore <file>` - restores a file to the last committed state
+
+</SectionCard>
