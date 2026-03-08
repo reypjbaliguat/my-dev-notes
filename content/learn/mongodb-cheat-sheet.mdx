@@ -1,0 +1,366 @@
+---
+title: MongoDB Operators Cheat Sheet
+description: A comprehensive guide to MongoDB query operators with practical examples for efficient database operations
+---
+
+<SectionCard title="What is MongoDB?">
+
+- NoSQL document-oriented database
+- Stores data in flexible, JSON-like documents (BSON)
+- Provides powerful query language with operators
+- Supports horizontal scaling and replication
+- Widely used for modern web applications
+
+</SectionCard>
+
+<SectionCard title="Comparison Operators">
+
+**$eq (Equal)** - Matches values that are equal to a specified value
+
+```javascript
+// Find users with age equal to 25
+db.users.find({ age: { $eq: 25 } });
+// Shorthand (implicit $eq)
+db.users.find({ age: 25 });
+```
+
+**$ne (Not Equal)** - Matches values that are not equal to a specified value
+
+```javascript
+// Find users whose status is not "inactive"
+db.users.find({ status: { $ne: "inactive" } });
+```
+
+**$gt (Greater Than)** - Matches values greater than a specified value
+
+```javascript
+// Find products with price greater than 100
+db.products.find({ price: { $gt: 100 } });
+```
+
+**$gte (Greater Than or Equal)** - Matches values greater than or equal to a specified value
+
+```javascript
+// Find users 18 years old or older
+db.users.find({ age: { $gte: 18 } });
+```
+
+**$lt (Less Than)** - Matches values less than a specified value
+
+```javascript
+// Find products with stock less than 10
+db.products.find({ stock: { $lt: 10 } });
+```
+
+**$lte (Less Than or Equal)** - Matches values less than or equal to a specified value
+
+```javascript
+// Find orders with quantity less than or equal to 5
+db.orders.find({ quantity: { $lte: 5 } });
+```
+
+**$in** - Matches any of the values in an array
+
+```javascript
+// Find users with status either "active" or "pending"
+db.users.find({ status: { $in: ["active", "pending"] } });
+
+// Find products in specific categories
+db.products.find({ category: { $in: ["electronics", "books", "clothing"] } });
+```
+
+**$nin (Not In)** - Matches none of the values in an array
+
+```javascript
+// Find users whose role is not admin or moderator
+db.users.find({ role: { $nin: ["admin", "moderator"] } });
+```
+
+</SectionCard>
+
+<SectionCard title="Logical Operators">
+
+**$and** - Joins query clauses with AND logic
+
+```javascript
+// Find users who are active AND over 21
+db.users.find({
+  $and: [{ status: "active" }, { age: { $gt: 21 } }],
+});
+
+// Implicit $and (more common)
+db.users.find({ status: "active", age: { $gt: 21 } });
+```
+
+**$or** - Joins query clauses with OR logic
+
+```javascript
+// Find users who are either VIP or have spent more than $1000
+db.users.find({
+  $or: [{ membership: "VIP" }, { totalSpent: { $gt: 1000 } }],
+});
+```
+
+**$not** - Inverts the effect of a query expression
+
+```javascript
+// Find products where price is NOT greater than 100 (so ≤ 100)
+db.products.find({ price: { $not: { $gt: 100 } } });
+```
+
+**$nor** - Joins query clauses with NOR logic
+
+```javascript
+// Find users who are neither inactive nor banned
+db.users.find({
+  $nor: [{ status: "inactive" }, { status: "banned" }],
+});
+```
+
+</SectionCard>
+
+<SectionCard title="Element Operators">
+
+**$exists** - Matches documents that have the specified field
+
+```javascript
+// Find users who have an email field
+db.users.find({ email: { $exists: true } });
+
+// Find users who don't have a phone number
+db.users.find({ phone: { $exists: false } });
+```
+
+**$type** - Selects documents if a field is of the specified type
+
+```javascript
+// Find documents where age field is a number
+db.users.find({ age: { $type: "number" } });
+
+// Find documents where tags field is an array
+db.posts.find({ tags: { $type: "array" } });
+```
+
+</SectionCard>
+
+<SectionCard title="Array Operators">
+
+**$all** - Matches arrays that contain all elements specified in the query
+
+```javascript
+// Find documents where tags array contains both "mongodb" and "database"
+db.posts.find({ tags: { $all: ["mongodb", "database"] } });
+```
+
+**$elemMatch** - Matches documents that contain an array field with at least one element matching criteria
+
+```javascript
+// Find users with at least one order over $100
+db.users.find({
+  orders: {
+    $elemMatch: { amount: { $gt: 100 } },
+  },
+});
+```
+
+**$size** - Matches any array with the exact number of elements
+
+```javascript
+// Find posts with exactly 3 tags
+db.posts.find({ tags: { $size: 3 } });
+```
+
+</SectionCard>
+
+<SectionCard title="String/Regex Operators">
+
+**$regex** - Provides regular expression capabilities
+
+```javascript
+// Find users whose name starts with "John"
+db.users.find({ name: { $regex: /^John/ } });
+
+// Case-insensitive search for "admin" in title
+db.posts.find({ title: { $regex: /admin/i } });
+
+// Alternative syntax
+db.users.find({ name: { $regex: "^John", $options: "i" } });
+```
+
+**$text** - Performs text search (requires text index)
+
+```javascript
+// Text search across indexed fields
+db.articles.find({ $text: { $search: "mongodb tutorial" } });
+
+// Search for exact phrase
+db.articles.find({ $text: { $search: '"exact phrase"' } });
+```
+
+</SectionCard>
+
+<SectionCard title="Date Operators & Ranges">
+
+**Date Range Queries** - Combine comparison operators for date ranges
+
+```javascript
+// Find orders from the last 30 days
+const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+db.orders.find({ createdAt: { $gte: thirtyDaysAgo } });
+
+// Find events between two dates
+db.events.find({
+  date: {
+    $gte: new Date("2024-01-01"),
+    $lt: new Date("2024-12-31"),
+  },
+});
+```
+
+</SectionCard>
+
+<SectionCard title="Update Operators">
+
+**$set** - Sets the value of a field
+
+```javascript
+// Update user's name and age
+db.users.updateOne(
+  { _id: ObjectId("...") },
+  { $set: { name: "John Doe", age: 30 } },
+);
+```
+
+**$unset** - Removes the specified field
+
+```javascript
+// Remove the phone field from a user
+db.users.updateOne({ _id: ObjectId("...") }, { $unset: { phone: "" } });
+```
+
+**$inc** - Increments a field by a specified value
+
+```javascript
+// Increase product stock by 10
+db.products.updateOne({ _id: ObjectId("...") }, { $inc: { stock: 10 } });
+```
+
+**$push** - Adds an element to an array
+
+```javascript
+// Add a new tag to a post
+db.posts.updateOne({ _id: ObjectId("...") }, { $push: { tags: "mongodb" } });
+```
+
+**$pull** - Removes elements from an array that match a query
+
+```javascript
+// Remove a specific tag from all posts
+db.posts.updateMany({}, { $pull: { tags: "deprecated" } });
+```
+
+</SectionCard>
+
+<SectionCard title="Aggregation Pipeline Basics">
+
+**$match** - Filters documents (similar to find())
+
+```javascript
+// Basic aggregation pipeline
+db.orders.aggregate([
+  { $match: { status: "completed" } },
+  { $group: { _id: "$customerId", total: { $sum: "$amount" } } },
+]);
+```
+
+**$group** - Groups documents by specified fields
+
+```javascript
+// Group sales by category and sum revenue
+db.sales.aggregate([
+  {
+    $group: {
+      _id: "$category",
+      totalRevenue: { $sum: "$amount" },
+      count: { $sum: 1 },
+    },
+  },
+]);
+```
+
+**$sort** - Sorts documents
+
+```javascript
+// Sort users by creation date (newest first)
+db.users.aggregate([{ $sort: { createdAt: -1 } }]);
+```
+
+**$limit** and **$skip** - Pagination
+
+```javascript
+// Get page 2 with 10 results per page
+db.products.aggregate([{ $skip: 10 }, { $limit: 10 }]);
+```
+
+</SectionCard>
+
+<SectionCard title="Common Query Patterns">
+
+**Pagination Pattern**
+
+```javascript
+const page = 2;
+const limit = 10;
+const skip = (page - 1) * limit;
+
+db.posts.find({}).sort({ createdAt: -1 }).skip(skip).limit(limit);
+```
+
+**Search with Multiple Conditions**
+
+```javascript
+// Complex search with price range, category, and availability
+db.products.find({
+  category: { $in: ["electronics", "books"] },
+  price: { $gte: 10, $lte: 100 },
+  inStock: true,
+  $or: [
+    { title: { $regex: /laptop/i } },
+    { description: { $regex: /computer/i } },
+  ],
+});
+```
+
+**Count Documents with Conditions**
+
+```javascript
+// Count active users
+db.users.countDocuments({ status: "active" });
+
+// Count products in specific price range
+db.products.countDocuments({
+  price: { $gte: 50, $lte: 200 },
+});
+```
+
+</SectionCard>
+
+<SectionCard title="Performance Tips">
+
+- Create indexes on frequently queried fields
+- Use `explain()` to analyze query performance
+- Limit returned fields with projection: `find({}, { name: 1, email: 1 })`
+- Use `$exists: false` carefully as it can be slow without proper indexing
+- Prefer `$in` over multiple `$or` conditions when possible
+- Use compound indexes for multi-field queries
+
+</SectionCard>
+
+<SectionCard title="Resources to Learn MongoDB">
+
+- Official MongoDB Documentation: [https://docs.mongodb.com/](https://docs.mongodb.com/)
+- MongoDB University (Free Courses): [https://university.mongodb.com/](https://university.mongodb.com/)
+- MongoDB Query Operators Reference: [https://docs.mongodb.com/manual/reference/operator/query/](https://docs.mongodb.com/manual/reference/operator/query/)
+- MongoDB Aggregation Pipeline: [https://docs.mongodb.com/manual/aggregation/](https://docs.mongodb.com/manual/aggregation/)
+
+</SectionCard>
