@@ -17,7 +17,7 @@ description: A comprehensive guide to MongoDB query operators with practical exa
 
 **$eq (Equal)** - Matches values that are equal to a specified value
 
-```javascript
+```js
 // Find users with age equal to 25
 db.users.find({ age: { $eq: 25 } });
 // Shorthand (implicit $eq)
@@ -26,21 +26,21 @@ db.users.find({ age: 25 });
 
 **$ne (Not Equal)** - Matches values that are not equal to a specified value
 
-```javascript
+```js
 // Find users whose status is not "inactive"
 db.users.find({ status: { $ne: "inactive" } });
 ```
 
 **$gt (Greater Than)** - Matches values greater than a specified value
 
-```javascript
+```js
 // Find products with price greater than 100
 db.products.find({ price: { $gt: 100 } });
 ```
 
 **$gte (Greater Than or Equal)** - Matches values greater than or equal to a specified value
 
-```javascript
+```js
 // Find users 18 years old or older
 db.users.find({ age: { $gte: 18 } });
 ```
@@ -61,7 +61,7 @@ db.orders.find({ quantity: { $lte: 5 } });
 
 **$in** - Matches any of the values in an array
 
-```javascript
+```js
 // Find users with status either "active" or "pending"
 db.users.find({ status: { $in: ["active", "pending"] } });
 

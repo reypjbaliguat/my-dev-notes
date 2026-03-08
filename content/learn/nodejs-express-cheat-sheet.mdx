@@ -1,0 +1,846 @@
+---
+title: Node.js & Express Cheat Sheet
+description: Essential Node.js and Express commands, patterns, and best practices for backend development
+---
+
+<SectionCard title="What is Node.js & Express?">
+
+- **Node.js**: JavaScript runtime built on Chrome's V8 engine for server-side development
+- **Express.js**: Fast, minimalist web framework for Node.js applications
+- **npm/pnpm/yarn**: Package managers for Node.js dependencies
+- **Event-driven**: Non-blocking I/O operations for high performance
+- **Full-stack JavaScript**: Use same language for frontend and backend
+
+</SectionCard>
+
+<SectionCard title="Node.js Basics">
+
+**Initialize a new project**
+
+```bash
+# Create new project
+npm init
+npm init -y  # Skip questions
+
+# With pnpm
+pnpm init
+
+# With yarn
+yarn init
+```
+
+**Package Management**
+
+```bash
+# Install dependencies
+npm install express
+npm install -D nodemon typescript @types/node
+npm install --save-dev jest
+
+# Global installation
+npm install -g nodemon typescript
+
+# Update packages
+npm update
+npm outdated  # Check for outdated packages
+
+# Remove packages
+npm uninstall express
+```
+
+**Common npm Scripts**
+
+```json
+// package.json
+{
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "build": "tsc",
+    "test": "jest",
+    "lint": "eslint . --ext .js,.ts",
+    "clean": "rm -rf dist node_modules"
+  }
+}
+```
+
+</SectionCard>
+
+<SectionCard title="Basic Express Server Setup">
+
+**Minimal Express Server**
+
+```javascript
+const express = require("express");
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Basic route
+app.get("/", (req, res) => {
+  res.json({ message: "Hello World!" });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+```
+
+**ES6 Modules Setup**
+
+```javascript
+// package.json - add "type": "module"
+import express from "express";
+import cors from "cors";
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(cors());
+app.use(express.json());
+
+app.get("/", (req, res) => {
+  res.json({ message: "Hello with ES6!" });
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+```
+
+</SectionCard>
+
+<SectionCard title="Express Routing">
+
+**Basic Routes**
+
+```javascript
+// GET route
+app.get("/users", (req, res) => {
+  res.json({ users: [] });
+});
+
+// POST route
+app.post("/users", (req, res) => {
+  const { name, email } = req.body;
+  res.status(201).json({ id: 1, name, email });
+});
+
+// PUT route
+app.put("/users/:id", (req, res) => {
+  const { id } = req.params;
+  const updates = req.body;
+  res.json({ id, ...updates });
+});
+
+// DELETE route
+app.delete("/users/:id", (req, res) => {
+  const { id } = req.params;
+  res.status(204).send();
+});
+```
+
+**Route Parameters & Query Strings**
+
+```javascript
+// Route parameters
+app.get("/users/:id", (req, res) => {
+  const userId = req.params.id;
+  res.json({ userId });
+});
+
+// Multiple parameters
+app.get("/users/:id/posts/:postId", (req, res) => {
+  const { id, postId } = req.params;
+  res.json({ userId: id, postId });
+});
+
+// Query parameters
+app.get("/search", (req, res) => {
+  const { q, limit = 10, page = 1 } = req.query;
+  res.json({ query: q, limit: Number(limit), page: Number(page) });
+});
+
+// Optional parameters
+app.get("/posts/:year/:month?", (req, res) => {
+  const { year, month } = req.params;
+  res.json({ year, month: month || "all" });
+});
+```
+
+**Express Router**
+
+```javascript
+// routes/users.js
+const express = require("express");
+const router = express.Router();
+
+router.get("/", (req, res) => {
+  res.json({ message: "Get all users" });
+});
+
+router.get("/:id", (req, res) => {
+  res.json({ message: `Get user ${req.params.id}` });
+});
+
+module.exports = router;
+
+// app.js
+const userRoutes = require("./routes/users");
+app.use("/api/users", userRoutes);
+```
+
+</SectionCard>
+
+<SectionCard title="Middleware">
+
+**Built-in Middleware**
+
+```javascript
+// Parse JSON bodies
+app.use(express.json({ limit: "10mb" }));
+
+// Parse URL-encoded data
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static files
+app.use(express.static("public"));
+app.use("/uploads", express.static("uploads"));
+```
+
+**Custom Middleware**
+
+```javascript
+// Logger middleware
+const logger = (req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+};
+
+app.use(logger);
+
+// Auth middleware
+const authenticateToken = (req, res, next) => {
+  const token = req.header("Authorization")?.replace("Bearer ", "");
+
+  if (!token) {
+    return res.status(401).json({ error: "Access token required" });
+  }
+
+  // Verify token logic here
+  req.user = { id: 1, name: "John" }; // Mock user
+  next();
+};
+
+// Apply to specific routes
+app.get("/protected", authenticateToken, (req, res) => {
+  res.json({ user: req.user });
+});
+```
+
+**Error Handling Middleware**
+
+```javascript
+// Error handling middleware (must be last)
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+
+  if (err.type === "ValidationError") {
+    return res.status(400).json({ error: err.message });
+  }
+
+  res.status(500).json({ error: "Internal server error" });
+});
+
+// 404 handler
+app.use("*", (req, res) => {
+  res.status(404).json({ error: "Route not found" });
+});
+```
+
+</SectionCard>
+
+<SectionCard title="Request & Response Handling">
+
+**Request Object Properties**
+
+```javascript
+app.post("/example", (req, res) => {
+  // Request body (JSON/form data)
+  console.log(req.body);
+
+  // URL parameters
+  console.log(req.params);
+
+  // Query string parameters
+  console.log(req.query);
+
+  // Headers
+  console.log(req.headers);
+  console.log(req.get("Content-Type"));
+
+  // Other useful properties
+  console.log(req.method); // HTTP method
+  console.log(req.url); // Full URL
+  console.log(req.path); // Path part of URL
+  console.log(req.ip); // Client IP
+  console.log(req.cookies); // Cookies (requires cookie-parser)
+});
+```
+
+**Response Methods**
+
+```javascript
+app.get("/response-examples", (req, res) => {
+  // Send JSON
+  res.json({ message: "Success" });
+
+  // Send text
+  res.send("Hello World");
+
+  // Send with status
+  res.status(201).json({ created: true });
+
+  // Set headers
+  res.set("Custom-Header", "value");
+  res.header("Another-Header", "value");
+
+  // Redirect
+  res.redirect("/new-path");
+  res.redirect(301, "/permanent-redirect");
+
+  // Send file
+  res.sendFile(__dirname + "/public/index.html");
+
+  // Download file
+  res.download("/path/to/file.pdf", "download.pdf");
+
+  // Set cookies
+  res.cookie("name", "value", { maxAge: 900000, httpOnly: true });
+});
+```
+
+</SectionCard>
+
+<SectionCard title="Common Express Middleware Packages">
+
+**CORS - Cross-Origin Resource Sharing**
+
+```javascript
+const cors = require("cors");
+
+// Enable all CORS requests
+app.use(cors());
+
+// Custom CORS options
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "https://myapp.com"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  }),
+);
+```
+
+**Morgan - HTTP Request Logger**
+
+```javascript
+const morgan = require("morgan");
+
+// Predefined format
+app.use(morgan("combined"));
+app.use(morgan("dev"));
+
+// Custom format
+app.use(
+  morgan(":method :url :status :res[content-length] - :response-time ms"),
+);
+```
+
+**Helmet - Security Headers**
+
+```javascript
+const helmet = require("helmet");
+
+// Basic security headers
+app.use(helmet());
+
+// Custom configuration
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+      },
+    },
+  }),
+);
+```
+
+**Rate Limiting**
+
+```javascript
+const rateLimit = require("express-rate-limit");
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: "Too many requests from this IP",
+});
+
+app.use("/api/", limiter);
+```
+
+</SectionCard>
+
+<SectionCard title="Environment Variables & Configuration">
+
+**Using dotenv**
+
+```javascript
+// Install: npm install dotenv
+require('dotenv').config();
+
+// .env file
+PORT=3000
+DATABASE_URL=mongodb://localhost:27017/myapp
+JWT_SECRET=your-secret-key
+NODE_ENV=development
+
+// Usage in code
+const PORT = process.env.PORT || 3000;
+const DB_URL = process.env.DATABASE_URL;
+const isProduction = process.env.NODE_ENV === 'production';
+```
+
+**Configuration Management**
+
+```javascript
+// config/index.js
+module.exports = {
+  port: process.env.PORT || 3000,
+  database: {
+    url: process.env.DATABASE_URL || "mongodb://localhost:27017/myapp",
+    options: {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    },
+  },
+  jwt: {
+    secret: process.env.JWT_SECRET || "fallback-secret",
+    expiresIn: process.env.JWT_EXPIRES_IN || "24h",
+  },
+};
+```
+
+</SectionCard>
+
+<SectionCard title="File Operations & Uploads">
+
+**File System Operations**
+
+```javascript
+const fs = require("fs").promises;
+const path = require("path");
+
+// Read file
+app.get("/read-file", async (req, res) => {
+  try {
+    const data = await fs.readFile("data.txt", "utf8");
+    res.json({ content: data });
+  } catch (error) {
+    res.status(500).json({ error: "File not found" });
+  }
+});
+
+// Write file
+app.post("/write-file", async (req, res) => {
+  try {
+    await fs.writeFile("output.txt", req.body.content);
+    res.json({ message: "File written successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to write file" });
+  }
+});
+```
+
+**File Upload with Multer**
+
+```javascript
+const multer = require("multer");
+
+// Memory storage
+const upload = multer({ dest: "uploads/" });
+
+// Custom storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/");
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname),
+    );
+  },
+});
+
+const uploadWithStorage = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files allowed"));
+    }
+  },
+});
+
+// Single file upload
+app.post("/upload", upload.single("image"), (req, res) => {
+  res.json({ file: req.file });
+});
+
+// Multiple files
+app.post("/upload-multiple", upload.array("images", 5), (req, res) => {
+  res.json({ files: req.files });
+});
+```
+
+</SectionCard>
+
+<SectionCard title="Database Integration Examples">
+
+**MongoDB with Mongoose**
+
+```javascript
+const mongoose = require("mongoose");
+
+// Connect to MongoDB
+mongoose
+  .connect(process.env.DATABASE_URL)
+  .then(() => console.log("Connected to MongoDB"))
+  .catch((err) => console.error("MongoDB connection error:", err));
+
+// Schema and Model
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  createdAt: { type: Date, default: Date.now },
+});
+
+const User = mongoose.model("User", userSchema);
+
+// CRUD operations
+app.post("/users", async (req, res) => {
+  try {
+    const user = new User(req.body);
+    await user.save();
+    res.status(201).json(user);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.get("/users", async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+```
+
+**PostgreSQL with pg**
+
+```javascript
+const { Pool } = require("pg");
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === "production",
+});
+
+app.get("/users", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT * FROM users");
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/users", async (req, res) => {
+  const { name, email } = req.body;
+  try {
+    const result = await pool.query(
+      "INSERT INTO users (name, email) VALUES ($1, $2) RETURNING *",
+      [name, email],
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+```
+
+</SectionCard>
+
+<SectionCard title="Authentication & Authorization">
+
+**JWT Authentication**
+
+```javascript
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+
+// Register user
+app.post("/register", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Save user (implementation depends on your database)
+    const user = await createUser({ email, password: hashedPassword });
+
+    res.status(201).json({ message: "User created successfully" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Login user
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find user
+    const user = await findUserByEmail(email);
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    // Check password
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    // Generate token
+    const token = jwt.sign(
+      { userId: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "24h" },
+    );
+
+    res.json({ token, user: { id: user.id, email: user.email } });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Verify token middleware
+const verifyToken = (req, res, next) => {
+  const token = req.header("Authorization")?.replace("Bearer ", "");
+
+  if (!token) {
+    return res.status(401).json({ error: "Access token required" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: "Invalid token" });
+  }
+};
+```
+
+</SectionCard>
+
+<SectionCard title="Testing with Jest & Supertest">
+
+**Basic Test Setup**
+
+```javascript
+// Install: npm install -D jest supertest
+const request = require("supertest");
+const app = require("../app"); // Your Express app
+
+describe("API Endpoints", () => {
+  test("GET / should return 200", async () => {
+    const response = await request(app).get("/").expect(200);
+
+    expect(response.body).toHaveProperty("message");
+  });
+
+  test("POST /users should create user", async () => {
+    const userData = { name: "John", email: "john@example.com" };
+
+    const response = await request(app)
+      .post("/users")
+      .send(userData)
+      .expect(201);
+
+    expect(response.body.email).toBe(userData.email);
+  });
+
+  test("GET /users/:id should return user", async () => {
+    const response = await request(app).get("/users/1").expect(200);
+
+    expect(response.body).toHaveProperty("id");
+  });
+});
+
+// package.json test script
+// "test": "jest --watchAll --no-cache"
+```
+
+</SectionCard>
+
+<SectionCard title="Performance & Production Tips">
+
+**Compression & Caching**
+
+```javascript
+const compression = require("compression");
+
+// Enable gzip compression
+app.use(compression());
+
+// Cache control
+app.use(
+  "/static",
+  express.static("public", {
+    maxAge: "1d", // Cache for 1 day
+    etag: false,
+  }),
+);
+
+// API response caching
+const cache = {};
+app.get("/expensive-operation", (req, res) => {
+  const cacheKey = req.url;
+
+  if (cache[cacheKey]) {
+    return res.json(cache[cacheKey]);
+  }
+
+  // Expensive operation
+  const result = performExpensiveOperation();
+  cache[cacheKey] = result;
+
+  res.json(result);
+});
+```
+
+**Production Configuration**
+
+```javascript
+// Graceful shutdown
+process.on("SIGTERM", () => {
+  console.log("SIGTERM received, shutting down gracefully");
+  server.close(() => {
+    console.log("Process terminated");
+  });
+});
+
+// Uncaught exception handling
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
+  process.exit(1);
+});
+```
+
+</SectionCard>
+
+<SectionCard title="Useful npm Packages">
+
+**Essential Packages**
+
+- `express` - Web framework
+- `dotenv` - Environment variables
+- `cors` - Cross-origin resource sharing
+- `helmet` - Security middleware
+- `morgan` - HTTP request logger
+- `compression` - Response compression
+- `express-rate-limit` - Rate limiting
+
+**Development Tools**
+
+- `nodemon` - Auto-restart server on changes
+- `jest` - Testing framework
+- `supertest` - HTTP testing
+- `eslint` - Code linting
+- `prettier` - Code formatting
+
+**Database & Auth**
+
+- `mongoose` - MongoDB ODM
+- `pg` - PostgreSQL client
+- `jsonwebtoken` - JWT tokens
+- `bcryptjs` - Password hashing
+- `multer` - File upload handling
+
+</SectionCard>
+
+<SectionCard title="Node.js CLI Commands">
+
+**Common Commands**
+
+```bash
+# Check Node.js version
+node --version
+npm --version
+
+# Run JavaScript file
+node app.js
+node -e "console.log('Hello World')"
+
+# Package management
+npm install package-name
+npm install -g package-name
+npm uninstall package-name
+npm update
+npm audit
+npm audit fix
+
+# Scripts
+npm run dev
+npm run build
+npm test
+npm start
+
+# Create package-lock.json
+npm install --package-lock-only
+
+# Clean install (removes node_modules first)
+npm ci
+```
+
+</SectionCard>
+
+<SectionCard title="Resources to Learn Node.js & Express">
+
+- Official Node.js Documentation: [https://nodejs.org/en/docs/](https://nodejs.org/en/docs/)
+- Express.js Guide: [https://expressjs.com/en/guide/](https://expressjs.com/en/guide/)
+- npm Documentation: [https://docs.npmjs.com/](https://docs.npmjs.com/)
+- Node.js Best Practices: [https://github.com/goldbergyoni/nodebestpractices](https://github.com/goldbergyoni/nodebestpractices)
+- MDN Web Docs - Server-side: [https://developer.mozilla.org/en-US/docs/Learn/Server-side](https://developer.mozilla.org/en-US/docs/Learn/Server-side)
+
+</SectionCard>

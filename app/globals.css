@@ -4,3 +4,47 @@
   border-bottom: 1px solid #27272a;
   padding-bottom: 0.3rem;
 }
+
+/* Enhanced code styling */
+.prose code {
+  font-family:
+    "Cascadia Code", "Fira Code", "JetBrains Mono", Monaco, "Courier New",
+    monospace;
+}
+
+/* Improve inline code readability */
+.prose p code,
+.prose li code {
+  background-color: rgba(39, 39, 42, 0.8);
+  color: #e4e4e7;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+  font-weight: 500;
+}
+
+/* Code block improvements */
+.prose pre {
+  background-color: transparent !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Scrollbar styling for code blocks */
+.prose pre::-webkit-scrollbar {
+  height: 8px;
+}
+
+.prose pre::-webkit-scrollbar-track {
+  background: rgba(39, 39, 42, 0.5);
+  border-radius: 4px;
+}
+
+.prose pre::-webkit-scrollbar-thumb {
+  background: rgba(113, 113, 122, 0.5);
+  border-radius: 4px;
+}
+
+.prose pre::-webkit-scrollbar-thumb:hover {
+  background: rgba(113, 113, 122, 0.8);
+}

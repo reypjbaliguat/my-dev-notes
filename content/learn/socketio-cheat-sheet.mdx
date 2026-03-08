@@ -1,0 +1,1239 @@
+---
+title: Socket.io Cheat Sheet
+description: Complete guide to real-time communication with Socket.io, including chat applications and MongoDB integration
+---
+
+<SectionCard title="What is Socket.io?">
+
+- **Real-time Communication**: Enables bidirectional communication between client and server
+- **WebSocket Alternative**: Fallback to HTTP long-polling when WebSocket unavailable
+- **Event-driven**: Uses custom events for communication
+- **Rooms & Namespaces**: Organize connections into groups
+- **Cross-platform**: Works with web browsers, mobile apps, and servers
+
+</SectionCard>
+
+<SectionCard title="Server Setup (Backend)">
+
+**Basic Express + Socket.io Server**
+
+```javascript
+const express = require("express");
+const { createServer } = require("http");
+const { Server } = require("socket.io");
+
+const app = express();
+const httpServer = createServer(app);
+
+// Socket.io server setup
+const io = new Server(httpServer, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+  },
+});
+
+// Handle connection
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  // Listen for custom events
+  socket.on("message", (data) => {
+    console.log("Received:", data);
+    // Echo back to all clients
+    io.emit("message", data);
+  });
+
+  // Handle disconnect
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
+
+const PORT = process.env.PORT || 3001;
+httpServer.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+```
+
+**With TypeScript**
+
+```typescript
+import express from "express";
+import { createServer } from "http";
+import { Server, Socket } from "socket.io";
+
+interface ServerToClientEvents {
+  message: (data: { text: string; user: string }) => void;
+  userJoined: (user: string) => void;
+}
+
+interface ClientToServerEvents {
+  message: (data: { text: string; user: string }) => void;
+  joinRoom: (room: string) => void;
+}
+
+const app = express();
+const httpServer = createServer(app);
+
+const io = new Server<ClientToServerEvents, ServerToClientEvents>(httpServer, {
+  cors: { origin: "http://localhost:3000" },
+});
+
+io.on(
+  "connection",
+  (socket: Socket<ClientToServerEvents, ServerToClientEvents>) => {
+    console.log("User connected:", socket.id);
+  },
+);
+```
+
+</SectionCard>
+
+<SectionCard title="Client Setup (Frontend)">
+
+**Vanilla JavaScript Client**
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Socket.io Chat</title>
+  </head>
+  <body>
+    <div id="messages"></div>
+    <input id="messageInput" type="text" placeholder="Type a message..." />
+    <button id="sendBtn">Send</button>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io("http://localhost:3001");
+
+      // Listen for messages
+      socket.on("message", (data) => {
+        const messages = document.getElementById("messages");
+        messages.innerHTML += `<p><strong>${data.user}:</strong> ${data.text}</p>`;
+      });
+
+      // Send message
+      document.getElementById("sendBtn").addEventListener("click", () => {
+        const input = document.getElementById("messageInput");
+        const message = {
+          text: input.value,
+          user: "Anonymous",
+          timestamp: new Date().toISOString(),
+        };
+
+        socket.emit("message", message);
+        input.value = "";
+      });
+
+      // Handle connection events
+      socket.on("connect", () => {
+        console.log("Connected to server");
+      });
+
+      socket.on("disconnect", () => {
+        console.log("Disconnected from server");
+      });
+    </script>
+  </body>
+</html>
+```
+
+**React Client with Hooks**
+
+```jsx
+// Install: npm install socket.io-client
+import { useEffect, useState } from "react";
+import io from "socket.io-client";
+
+const SOCKET_URL = "http://localhost:3001";
+
+function ChatApp() {
+  const [socket, setSocket] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [isConnected, setIsConnected] = useState(false);
+
+  useEffect(() => {
+    // Initialize socket connection
+    const socketInstance = io(SOCKET_URL);
+    setSocket(socketInstance);
+
+    // Connection event listeners
+    socketInstance.on("connect", () => {
+      setIsConnected(true);
+      console.log("Connected to server");
+    });
+
+    socketInstance.on("disconnect", () => {
+      setIsConnected(false);
+      console.log("Disconnected from server");
+    });
+
+    // Listen for messages
+    socketInstance.on("message", (data) => {
+      setMessages((prev) => [...prev, data]);
+    });
+
+    // Cleanup on unmount
+    return () => socketInstance.close();
+  }, []);
+
+  const sendMessage = () => {
+    if (socket && inputMessage.trim()) {
+      const message = {
+        text: inputMessage,
+        user: "User123",
+        timestamp: new Date().toISOString(),
+      };
+
+      socket.emit("message", message);
+      setInputMessage("");
+    }
+  };
+
+  return (
+    <div>
+      <div>Status: {isConnected ? "🟢 Connected" : "🔴 Disconnected"}</div>
+
+      <div className="messages">
+        {messages.map((msg, index) => (
+          <div key={index}>
+            <strong>{msg.user}:</strong> {msg.text}
+          </div>
+        ))}
+      </div>
+
+      <input
+        value={inputMessage}
+        onChange={(e) => setInputMessage(e.target.value)}
+        onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+        placeholder="Type a message..."
+      />
+      <button onClick={sendMessage}>Send</button>
+    </div>
+  );
+}
+
+export default ChatApp;
+```
+
+</SectionCard>
+
+<SectionCard title="Chat Application with MongoDB">
+
+**MongoDB Schema for Chat Messages**
+
+```javascript
+const mongoose = require("mongoose");
+
+// Message Schema
+const messageSchema = new mongoose.Schema({
+  text: { type: String, required: true },
+  user: { type: String, required: true },
+  room: { type: String, default: "general" },
+  timestamp: { type: Date, default: Date.now },
+  edited: { type: Boolean, default: false },
+  editedAt: { type: Date },
+});
+
+// Chat Room Schema
+const chatRoomSchema = new mongoose.Schema({
+  name: { type: String, required: true, unique: true },
+  description: String,
+  participants: [{ type: String }], // User IDs or names
+  createdAt: { type: Date, default: Date.now },
+  isPrivate: { type: Boolean, default: false },
+});
+
+const Message = mongoose.model("Message", messageSchema);
+const ChatRoom = mongoose.model("ChatRoom", chatRoomSchema);
+
+module.exports = { Message, ChatRoom };
+```
+
+**Complete Chat Server with MongoDB**
+
+```javascript
+const express = require("express");
+const { createServer } = require("http");
+const { Server } = require("socket.io");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const { Message, ChatRoom } = require("./models/Chat");
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: { origin: "http://localhost:3000", methods: ["GET", "POST"] },
+});
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URL || "mongodb://localhost:27017/chat");
+
+// Store active users and rooms
+const activeUsers = new Map();
+const roomUsers = new Map();
+
+// REST API endpoints for chat history
+app.get("/api/messages/:room", async (req, res) => {
+  try {
+    const { room } = req.params;
+    const { page = 1, limit = 50 } = req.query;
+
+    const messages = await Message.find({ room })
+      .sort({ timestamp: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .exec();
+
+    res.json(messages.reverse());
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/rooms", async (req, res) => {
+  try {
+    const rooms = await ChatRoom.find();
+    res.json(rooms);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Socket.io connection handling
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  // User joins with username
+  socket.on("join", async ({ username, room = "general" }) => {
+    // Store user info
+    activeUsers.set(socket.id, { username, room });
+
+    // Join the room
+    socket.join(room);
+
+    // Update room users
+    if (!roomUsers.has(room)) {
+      roomUsers.set(room, new Set());
+    }
+    roomUsers.get(room).add(username);
+
+    // Notify room about new user
+    socket.to(room).emit("userJoined", {
+      username,
+      message: `${username} joined the chat`,
+      timestamp: new Date(),
+    });
+
+    // Send current room users
+    socket.emit("roomUsers", Array.from(roomUsers.get(room)));
+
+    // Send recent messages
+    try {
+      const recentMessages = await Message.find({ room })
+        .sort({ timestamp: -1 })
+        .limit(20)
+        .exec();
+
+      socket.emit("messageHistory", recentMessages.reverse());
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    }
+  });
+
+  // Handle new messages
+  socket.on("sendMessage", async (messageData) => {
+    const user = activeUsers.get(socket.id);
+    if (!user) return;
+
+    try {
+      // Save message to database
+      const message = new Message({
+        text: messageData.text,
+        user: user.username,
+        room: user.room,
+        timestamp: new Date(),
+      });
+
+      await message.save();
+
+      // Broadcast to room
+      io.to(user.room).emit("newMessage", {
+        id: message._id,
+        text: message.text,
+        user: message.user,
+        room: message.room,
+        timestamp: message.timestamp,
+      });
+    } catch (error) {
+      socket.emit("error", { message: "Failed to send message" });
+    }
+  });
+
+  // Handle typing indicators
+  socket.on("typing", ({ isTyping }) => {
+    const user = activeUsers.get(socket.id);
+    if (user) {
+      socket.to(user.room).emit("userTyping", {
+        username: user.username,
+        isTyping,
+      });
+    }
+  });
+
+  // Handle room changes
+  socket.on("changeRoom", async ({ newRoom }) => {
+    const user = activeUsers.get(socket.id);
+    if (!user) return;
+
+    const oldRoom = user.room;
+
+    // Leave old room
+    socket.leave(oldRoom);
+    roomUsers.get(oldRoom)?.delete(user.username);
+
+    // Join new room
+    user.room = newRoom;
+    socket.join(newRoom);
+
+    if (!roomUsers.has(newRoom)) {
+      roomUsers.set(newRoom, new Set());
+    }
+    roomUsers.get(newRoom).add(user.username);
+
+    // Notify rooms
+    socket.to(oldRoom).emit("userLeft", {
+      username: user.username,
+      message: `${user.username} left the chat`,
+    });
+
+    socket.to(newRoom).emit("userJoined", {
+      username: user.username,
+      message: `${user.username} joined the chat`,
+    });
+
+    // Send new room data
+    socket.emit("roomChanged", { room: newRoom });
+    socket.emit("roomUsers", Array.from(roomUsers.get(newRoom)));
+
+    try {
+      const recentMessages = await Message.find({ room: newRoom })
+        .sort({ timestamp: -1 })
+        .limit(20)
+        .exec();
+
+      socket.emit("messageHistory", recentMessages.reverse());
+    } catch (error) {
+      console.error("Error fetching messages:", error);
+    }
+  });
+
+  // Handle message editing
+  socket.on("editMessage", async ({ messageId, newText }) => {
+    const user = activeUsers.get(socket.id);
+    if (!user) return;
+
+    try {
+      const message = await Message.findOneAndUpdate(
+        { _id: messageId, user: user.username },
+        {
+          text: newText,
+          edited: true,
+          editedAt: new Date(),
+        },
+        { new: true },
+      );
+
+      if (message) {
+        io.to(user.room).emit("messageEdited", {
+          messageId,
+          newText,
+          editedAt: message.editedAt,
+        });
+      }
+    } catch (error) {
+      socket.emit("error", { message: "Failed to edit message" });
+    }
+  });
+
+  // Handle message deletion
+  socket.on("deleteMessage", async ({ messageId }) => {
+    const user = activeUsers.get(socket.id);
+    if (!user) return;
+
+    try {
+      const deleted = await Message.findOneAndDelete({
+        _id: messageId,
+        user: user.username,
+      });
+
+      if (deleted) {
+        io.to(user.room).emit("messageDeleted", { messageId });
+      }
+    } catch (error) {
+      socket.emit("error", { message: "Failed to delete message" });
+    }
+  });
+
+  // Handle disconnect
+  socket.on("disconnect", () => {
+    const user = activeUsers.get(socket.id);
+
+    if (user) {
+      // Remove from room users
+      const roomUserSet = roomUsers.get(user.room);
+      if (roomUserSet) {
+        roomUserSet.delete(user.username);
+
+        // Notify room
+        socket.to(user.room).emit("userLeft", {
+          username: user.username,
+          message: `${user.username} left the chat`,
+        });
+      }
+
+      // Remove from active users
+      activeUsers.delete(socket.id);
+    }
+
+    console.log("User disconnected:", socket.id);
+  });
+});
+
+const PORT = process.env.PORT || 3001;
+httpServer.listen(PORT, () => {
+  console.log(`Chat server running on port ${PORT}`);
+});
+```
+
+</SectionCard>
+
+<SectionCard title="Advanced React Chat Client">
+
+**Complete React Chat Application**
+
+```javascript
+import React, { useState, useEffect, useRef } from "react";
+import io from "socket.io-client";
+
+const SOCKET_URL = "http://localhost:3001";
+
+function ChatApp() {
+  const [socket, setSocket] = useState(null);
+  const [messages, setMessages] = useState([]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [username, setUsername] = useState("");
+  const [currentRoom, setCurrentRoom] = useState("general");
+  const [isConnected, setIsConnected] = useState(false);
+  const [typingUsers, setTypingUsers] = useState([]);
+  const [roomUsers, setRoomUsers] = useState([]);
+  const messagesEndRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+
+  useEffect(() => {
+    if (!username) return;
+
+    const socketInstance = io(SOCKET_URL);
+    setSocket(socketInstance);
+
+    // Connection events
+    socketInstance.on("connect", () => {
+      setIsConnected(true);
+      socketInstance.emit("join", { username, room: currentRoom });
+    });
+
+    socketInstance.on("disconnect", () => {
+      setIsConnected(false);
+    });
+
+    // Message events
+    socketInstance.on("newMessage", (message) => {
+      setMessages((prev) => [...prev, message]);
+    });
+
+    socketInstance.on("messageHistory", (history) => {
+      setMessages(history);
+    });
+
+    socketInstance.on("messageEdited", ({ messageId, newText, editedAt }) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === messageId
+            ? { ...msg, text: newText, edited: true, editedAt }
+            : msg,
+        ),
+      );
+    });
+
+    socketInstance.on("messageDeleted", ({ messageId }) => {
+      setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
+    });
+
+    // User events
+    socketInstance.on("userJoined", ({ username: joinedUser, message }) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          text: message,
+          user: "System",
+          timestamp: new Date(),
+          isSystem: true,
+        },
+      ]);
+    });
+
+    socketInstance.on("userLeft", ({ username: leftUser, message }) => {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          text: message,
+          user: "System",
+          timestamp: new Date(),
+          isSystem: true,
+        },
+      ]);
+    });
+
+    socketInstance.on("roomUsers", (users) => {
+      setRoomUsers(users);
+    });
+
+    // Typing events
+    socketInstance.on("userTyping", ({ username: typingUser, isTyping }) => {
+      setTypingUsers((prev) => {
+        if (isTyping) {
+          return prev.includes(typingUser) ? prev : [...prev, typingUser];
+        } else {
+          return prev.filter((user) => user !== typingUser);
+        }
+      });
+    });
+
+    return () => socketInstance.close();
+  }, [username, currentRoom]);
+
+  // Auto-scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const sendMessage = () => {
+    if (socket && inputMessage.trim()) {
+      socket.emit("sendMessage", { text: inputMessage });
+      setInputMessage("");
+
+      // Stop typing indicator
+      socket.emit("typing", { isTyping: false });
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setInputMessage(e.target.value);
+
+    if (socket) {
+      // Send typing indicator
+      socket.emit("typing", { isTyping: true });
+
+      // Clear previous timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Stop typing after 2 seconds of inactivity
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.emit("typing", { isTyping: false });
+      }, 2000);
+    }
+  };
+
+  const editMessage = (messageId, newText) => {
+    if (socket) {
+      socket.emit("editMessage", { messageId, newText });
+    }
+  };
+
+  const deleteMessage = (messageId) => {
+    if (socket) {
+      socket.emit("deleteMessage", { messageId });
+    }
+  };
+
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  if (!username) {
+    return (
+      <div className="login-screen">
+        <h2>Enter Chat</h2>
+        <input
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Enter your username"
+          onKeyPress={(e) => e.key === "Enter" && setUsername(username)}
+        />
+        <button onClick={() => username.trim() && setUsername(username)}>
+          Join Chat
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="chat-app">
+      <div className="chat-header">
+        <h2>Room: {currentRoom}</h2>
+        <div className="status">
+          {isConnected ? "🟢 Connected" : "🔴 Disconnected"}
+        </div>
+      </div>
+
+      <div className="chat-container">
+        <div className="sidebar">
+          <h3>Online Users ({roomUsers.length})</h3>
+          <ul>
+            {roomUsers.map((user, index) => (
+              <li
+                key={index}
+                className={user === username ? "current-user" : ""}
+              >
+                {user}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="messages-container">
+          <div className="messages">
+            {messages.map((message, index) => (
+              <div
+                key={message.id || index}
+                className={`message ${message.user === username ? "own-message" : ""} ${message.isSystem ? "system-message" : ""}`}
+              >
+                <div className="message-header">
+                  <strong>{message.user}</strong>
+                  <span className="timestamp">
+                    {formatTime(message.timestamp)}
+                  </span>
+                  {message.edited && <span className="edited">(edited)</span>}
+                </div>
+                <div className="message-text">{message.text}</div>
+
+                {message.user === username && !message.isSystem && (
+                  <div className="message-actions">
+                    <button
+                      onClick={() => {
+                        const newText = prompt("Edit message:", message.text);
+                        if (newText && newText !== message.text) {
+                          editMessage(message.id, newText);
+                        }
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button onClick={() => deleteMessage(message.id)}>
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+
+            {typingUsers.length > 0 && (
+              <div className="typing-indicator">
+                {typingUsers.join(", ")}{" "}
+                {typingUsers.length === 1 ? "is" : "are"} typing...
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="input-container">
+            <input
+              type="text"
+              value={inputMessage}
+              onChange={handleInputChange}
+              onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+              placeholder="Type a message..."
+              disabled={!isConnected}
+            />
+            <button
+              onClick={sendMessage}
+              disabled={!isConnected || !inputMessage.trim()}
+            >
+              Send
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default ChatApp;
+```
+
+</SectionCard>
+
+<SectionCard title="Rooms & Namespaces">
+
+**Server-side Rooms Management**
+
+```javascript
+// Basic room operations
+io.on("connection", (socket) => {
+  // Join a room
+  socket.on("joinRoom", (room) => {
+    socket.join(room);
+    socket.emit("joinedRoom", room);
+
+    // Notify others in the room
+    socket.to(room).emit("userJoinedRoom", {
+      userId: socket.id,
+      room: room,
+    });
+  });
+
+  // Leave a room
+  socket.on("leaveRoom", (room) => {
+    socket.leave(room);
+    socket.to(room).emit("userLeftRoom", {
+      userId: socket.id,
+      room: room,
+    });
+  });
+
+  // Send message to specific room
+  socket.on("messageToRoom", ({ room, message }) => {
+    io.to(room).emit("roomMessage", {
+      room,
+      message,
+      from: socket.id,
+    });
+  });
+
+  // Get room information
+  socket.on("getRoomInfo", (room) => {
+    const roomSockets = io.sockets.adapter.rooms.get(room);
+    const numClients = roomSockets ? roomSockets.size : 0;
+
+    socket.emit("roomInfo", {
+      room,
+      clientCount: numClients,
+    });
+  });
+});
+
+// Broadcasting patterns
+io.emit("broadcast", data); // To all clients
+socket.emit("message", data); // To sender only
+socket.broadcast.emit("message", data); // To all except sender
+io.to("room1").emit("message", data); // To room1 only
+socket.to("room1").emit("message", data); // To room1 except sender
+```
+
+**Namespaces for Different App Sections**
+
+```javascript
+// Create namespaces
+const chatNamespace = io.of("/chat");
+const gameNamespace = io.of("/game");
+
+// Chat namespace
+chatNamespace.on("connection", (socket) => {
+  console.log("User connected to chat namespace");
+
+  socket.on("chatMessage", (data) => {
+    chatNamespace.emit("newChatMessage", data);
+  });
+});
+
+// Game namespace
+gameNamespace.on("connection", (socket) => {
+  console.log("User connected to game namespace");
+
+  socket.on("gameMove", (data) => {
+    socket.broadcast.emit("opponentMove", data);
+  });
+});
+
+// Client-side namespace connection
+const chatSocket = io("/chat");
+const gameSocket = io("/game");
+```
+
+</SectionCard>
+
+<SectionCard title="Authentication with Socket.io">
+
+**Server-side Authentication**
+
+```javascript
+const jwt = require("jsonwebtoken");
+
+// Middleware for authentication
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.userId = decoded.userId;
+    socket.username = decoded.username;
+    next();
+  } catch (err) {
+    next(new Error("Authentication error"));
+  }
+});
+
+io.on("connection", (socket) => {
+  console.log(`Authenticated user connected: ${socket.username}`);
+
+  // User is now authenticated, can access userId and username
+  socket.emit("authenticated", {
+    userId: socket.userId,
+    username: socket.username,
+  });
+});
+```
+
+**Client-side Authentication**
+
+```javascript
+// React hook for authenticated socket connection
+import { useEffect, useState } from "react";
+import io from "socket.io-client";
+
+function useAuthenticatedSocket(token) {
+  const [socket, setSocket] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    if (!token) return;
+
+    const socketInstance = io("http://localhost:3001", {
+      auth: {
+        token: token,
+      },
+    });
+
+    socketInstance.on("connect", () => {
+      console.log("Connected to server");
+    });
+
+    socketInstance.on("authenticated", (userData) => {
+      setIsAuthenticated(true);
+      console.log("Authenticated as:", userData.username);
+    });
+
+    socketInstance.on("connect_error", (error) => {
+      console.error("Connection failed:", error.message);
+      setIsAuthenticated(false);
+    });
+
+    setSocket(socketInstance);
+
+    return () => {
+      socketInstance.close();
+      setIsAuthenticated(false);
+    };
+  }, [token]);
+
+  return { socket, isAuthenticated };
+}
+
+// Usage in component
+function AuthenticatedChat() {
+  const [token] = useState(localStorage.getItem("authToken"));
+  const { socket, isAuthenticated } = useAuthenticatedSocket(token);
+
+  if (!isAuthenticated) {
+    return <div>Authenticating...</div>;
+  }
+
+  return <ChatApp socket={socket} />;
+}
+```
+
+</SectionCard>
+
+<SectionCard title="Performance & Scalability">
+
+**Redis Adapter for Multiple Servers**
+
+```javascript
+// Install: npm install @socket.io/redis-adapter redis
+const { createAdapter } = require("@socket.io/redis-adapter");
+const { createClient } = require("redis");
+
+const pubClient = createClient({ url: "redis://localhost:6379" });
+const subClient = pubClient.duplicate();
+
+Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
+  io.adapter(createAdapter(pubClient, subClient));
+  console.log("Redis adapter configured");
+});
+
+// This allows multiple server instances to share socket events
+```
+
+**Connection Throttling & Rate Limiting**
+
+```javascript
+const rateLimit = require("express-rate-limit");
+
+// HTTP rate limiting
+app.use(
+  "/socket.io/",
+  rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 requests per windowMs
+  }),
+);
+
+// Socket event rate limiting
+const eventLimits = new Map();
+
+io.on("connection", (socket) => {
+  const clientId = socket.id;
+
+  socket.use(([event, ...args], next) => {
+    const now = Date.now();
+    const key = `${clientId}:${event}`;
+
+    if (!eventLimits.has(key)) {
+      eventLimits.set(key, []);
+    }
+
+    const timestamps = eventLimits.get(key);
+
+    // Remove timestamps older than 1 minute
+    const validTimestamps = timestamps.filter((t) => now - t < 60000);
+
+    if (validTimestamps.length >= 60) {
+      // 60 events per minute
+      return next(new Error("Rate limit exceeded"));
+    }
+
+    validTimestamps.push(now);
+    eventLimits.set(key, validTimestamps);
+    next();
+  });
+});
+```
+
+**Memory Management & Cleanup**
+
+```javascript
+// Clean up on disconnect
+const activeConnections = new Map();
+
+io.on("connection", (socket) => {
+  activeConnections.set(socket.id, {
+    userId: socket.userId,
+    joinedAt: Date.now(),
+    rooms: new Set(),
+  });
+
+  socket.on("disconnect", () => {
+    // Clean up user data
+    const connection = activeConnections.get(socket.id);
+    if (connection) {
+      // Leave all rooms
+      connection.rooms.forEach((room) => {
+        socket.leave(room);
+      });
+
+      activeConnections.delete(socket.id);
+    }
+  });
+});
+
+// Periodic cleanup of stale data
+setInterval(() => {
+  const now = Date.now();
+  const staleConnections = [];
+
+  activeConnections.forEach((connection, socketId) => {
+    // Remove connections older than 1 hour with no activity
+    if (now - connection.joinedAt > 3600000) {
+      staleConnections.push(socketId);
+    }
+  });
+
+  staleConnections.forEach((socketId) => {
+    activeConnections.delete(socketId);
+  });
+}, 300000); // Run every 5 minutes
+```
+
+</SectionCard>
+
+<SectionCard title="Testing Socket.io Applications">
+
+**Server Testing with Jest**
+
+```javascript
+// Install: npm install -D jest socket.io-client
+const { createServer } = require("http");
+const { Server } = require("socket.io");
+const Client = require("socket.io-client");
+
+describe("Socket.io Chat Server", () => {
+  let io, serverSocket, clientSocket;
+
+  beforeAll((done) => {
+    const httpServer = createServer();
+    io = new Server(httpServer);
+
+    httpServer.listen(() => {
+      const port = httpServer.address().port;
+      clientSocket = new Client(`http://localhost:${port}`);
+
+      io.on("connection", (socket) => {
+        serverSocket = socket;
+      });
+
+      clientSocket.on("connect", done);
+    });
+  });
+
+  afterAll(() => {
+    io.close();
+    clientSocket.close();
+  });
+
+  test("should receive message", (done) => {
+    clientSocket.on("message", (data) => {
+      expect(data).toBe("Hello World");
+      done();
+    });
+
+    serverSocket.emit("message", "Hello World");
+  });
+
+  test("should echo message", (done) => {
+    clientSocket.on("echo", (data) => {
+      expect(data.text).toBe("test message");
+      done();
+    });
+
+    clientSocket.emit("message", { text: "test message" });
+  });
+});
+```
+
+</SectionCard>
+
+<SectionCard title="Common Patterns & Best Practices">
+
+**Event Naming Conventions**
+
+```javascript
+// Client to Server events (actions)
+socket.emit("user:join", data);
+socket.emit("message:send", data);
+socket.emit("room:create", data);
+
+// Server to Client events (notifications)
+socket.emit("user:joined", data);
+socket.emit("message:received", data);
+socket.emit("room:created", data);
+
+// Error events
+socket.emit("error:authentication", data);
+socket.emit("error:validation", data);
+```
+
+**Graceful Error Handling**
+
+```javascript
+// Server-side error handling
+io.on("connection", (socket) => {
+  socket.on("error", (error) => {
+    console.error("Socket error:", error);
+  });
+
+  // Catch-all error handler
+  socket.use((packet, next) => {
+    try {
+      // Validate packet structure
+      if (!packet || !Array.isArray(packet)) {
+        throw new Error("Invalid packet format");
+      }
+      next();
+    } catch (error) {
+      next(new Error("Packet validation failed"));
+    }
+  });
+});
+
+// Client-side error handling
+socket.on("connect_error", (error) => {
+  console.error("Connection failed:", error.message);
+  // Implement reconnection logic or user notification
+});
+
+socket.on("error", (error) => {
+  console.error("Socket error:", error);
+  // Handle specific error types
+});
+```
+
+**Reconnection Strategy**
+
+```javascript
+// Client-side reconnection with exponential backoff
+const socket = io("http://localhost:3001", {
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  reconnectionDelayMax: 5000,
+  timeout: 20000,
+});
+
+socket.on("disconnect", (reason) => {
+  console.log("Disconnected:", reason);
+
+  if (reason === "io server disconnect") {
+    // Server initiated disconnect, reconnect manually
+    socket.connect();
+  }
+  // Otherwise, automatic reconnection will be attempted
+});
+
+socket.on("reconnect", (attemptNumber) => {
+  console.log("Reconnected after", attemptNumber, "attempts");
+});
+
+socket.on("reconnect_failed", () => {
+  console.log("Failed to reconnect");
+  // Implement fallback strategy
+});
+```
+
+</SectionCard>
+
+<SectionCard title="Resources to Learn Socket.io">
+
+- Official Socket.io Documentation: [https://socket.io/docs/](https://socket.io/docs/)
+- Socket.io Client API: [https://socket.io/docs/v4/client-api/](https://socket.io/docs/v4/client-api/)
+- Socket.io Server API: [https://socket.io/docs/v4/server-api/](https://socket.io/docs/v4/server-api/)
+- Real-time Tutorial: [https://socket.io/get-started/chat](https://socket.io/get-started/chat)
+- Socket.io with React: [https://socket.io/how-to/use-with-react](https://socket.io/how-to/use-with-react)
+- Socket.io GitHub Examples: [https://github.com/socketio/socket.io/tree/main/examples](https://github.com/socketio/socket.io/tree/main/examples)
+
+</SectionCard>
