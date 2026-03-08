@@ -1,0 +1,93 @@
+---
+title: TypeScript Learning
+description: A comprehensive guide to learning TypeScript, including types, interfaces, and best practices
+---
+
+<SectionCard title="What is TypeScript?">
+
+- A superset of JavaScript that adds static types
+- Developed and maintained by Microsoft
+- Compiles down to plain JavaScript
+- Helps catch errors early through type checking
+- Enhances code readability and maintainability
+
+</SectionCard>
+<SectionCard title="Why Use TypeScript?">
+- Early error detection
+- Improved IDE support and autocompletion
+- Better code organization with interfaces and types
+- Facilitates large-scale application development
+- Strong community and ecosystem
+</SectionCard>
+
+<SectionCard title="Basic Types in TypeScript">
+  - `number` - for numeric values - `string` - for text values - `boolean` - for
+  true/false values - `array` - for lists of values - `tuple` - for fixed-length
+  arrays with specific types - `enum` - for defining a set of named constants -
+  `any` - for variables that can hold any type - `void` - for functions that do
+  not return a value - `null` and `undefined` - for absence of value
+</SectionCard>
+<SectionCard title="Interfaces and Types">
+- Interfaces define the shape of an object
+- Types can define primitive types, union types, intersection types, and more
+- Use interfaces for object structures and types for more complex type definitions
+</SectionCard>
+<SectionCard title="Functions in TypeScript">
+- Type annotations for function parameters and return types
+- Optional and default parameters
+- Rest parameters for variable number of arguments
+- Function overloading
+</SectionCard>
+<SectionCard title="Classes and Inheritance">
+- Class syntax similar to ES6
+- Access modifiers: `public`, `private`, `protected`
+- Inheritance using `extends` keyword
+- Implementing interfaces with `implements` keyword
+</SectionCard>
+<SectionCard title="Generics in TypeScript">
+- Create reusable components that work with any data type
+- Define generic functions, classes, and interfaces
+- Use angle brackets `<>` to specify generic types
+</SectionCard>
+<SectionCard title="TypeScript Configuration">
+- `tsconfig.json` file to configure TypeScript compiler options
+- Common options: `target`, `module`, `strict`, `outDir`, `rootDir`
+- Use `tsc --init` to create a default `tsconfig.json` file
+</SectionCard>
+<SectionCard title="Compiling TypeScript">
+- Use the TypeScript compiler (`tsc`) to compile `.ts` files to `.js
+- Watch mode with `tsc --watch` for automatic recompilation on file changes
+- Integrate with build tools like Webpack, Gulp, or Grunt
+</SectionCard>
+<SectionCard title="Best Practices">
+- Use strict typing to catch errors early
+- Keep interfaces and types organized
+- Leverage TypeScript's features for better code quality
+- Regularly update TypeScript to benefit from new features and improvements
+</SectionCard>
+<SectionCard title="Resources to Learn TypeScript">
+- Official TypeScript Documentation: [https://www.typescriptlang.org/docs/](https://www.typescriptlang.org/docs/)
+- TypeScript Handbook: [https://www.typescriptlang.org/docs/handbook/](https://www.typescriptlang.org/docs/handbook/)
+- Online Courses: Platforms like Udemy, Coursera, and Pluralsight
+- Community Forums: Stack Overflow, Reddit, and TypeScript GitHub Discussions
+</SectionCard>
+
+<SectionCard title="Union types">
+TypeScript’s type system allows you to build new types out of existing ones using a large variety of operators. Now that we know how to write a few types, it’s time to start combining them in interesting ways.
+
+```
+function printId(id: number | string) {
+  console.log("Your ID is: " + id);
+}
+// OK
+printId(101);
+// OK
+printId("202");
+// Error
+printId({ myID: 22342 });
+Argument of type '{ myID: number; }' is not assignable to parameter of type 'string | number'.
+```
+
+</SectionCard>
+
+https://www.typescriptlang.org/docs/handbook/2/narrowing.html
