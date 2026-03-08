@@ -6,6 +6,7 @@ const withMDX = createMDX({
 
 const nextConfig = {
   pageExtensions: ["ts", "tsx", "mdx"],
+  transpilePackages: ["next-mdx-remote"],
 };
 
 export default withMDX(nextConfig);
